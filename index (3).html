@@ -1,0 +1,518 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Moiré Lab: Liquid Glass Edition</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0KOVEMmg9ikOAiqRT5ona6U/mpSImMLs6oVhmmweAuA3JsuSFr4fn" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURPiLqz3hSRKcFpSfoAIHqLaKNODJN5CijftS4RxzgoKRWev4bodde" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            /* Daylight / Liquid Glass Palette */
+            --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            --glass-bg: rgba(255, 255, 255, 0.35);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --text-dark: #2c3e50;
+            --text-light: #546e7a;
+            --accent: #2980b9;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            gap: 20px;
+            overflow: hidden;
+            color: var(--text-dark);
+        }
+
+        /* --- UI COMPONENTS: The "Tiles" --- */
+        .glass-tile {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- LEFT COLUMN: Simulator --- */
+        .left-col {
+            flex: 6;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 0; /* Flexbox overflow fix */
+        }
+
+        /* Top Menu Tile */
+        .menu-tile {
+            flex: 0 0 auto;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 8px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .menu-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 15px rgba(41, 128, 185, 0.4);
+        }
+
+        /* Simulation Canvas Tile */
+        .sim-tile {
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
+        }
+
+        /* Controls Tile */
+        .controls-tile {
+            flex: 0 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 25px 40px;
+        }
+
+        .control-group h4 {
+            margin: 0 0 15px 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            border-bottom: 2px solid rgba(255,255,255,0.5);
+            padding-bottom: 5px;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--accent);
+            background: transparent;
+        }
+
+        /* --- RIGHT COLUMN: Theory --- */
+        .right-col {
+            flex: 4;
+            overflow-y: auto;
+            padding-right: 5px; /* Space for scrollbar */
+        }
+
+        .theory-content {
+            padding: 10px 10px;
+        }
+
+        h2.theory-title {
+            font-size: 1.8rem;
+            margin-top: 0;
+            background: -webkit-linear-gradient(45deg, #2c3e50, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 15px;
+        }
+
+        h3.section-head {
+            color: var(--accent);
+            margin-top: 30px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h3.section-head::before {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        p, li {
+            line-height: 1.7;
+            font-size: 0.95rem;
+            color: #444;
+        }
+
+        /* Math Styling */
+        .math-block {
+            background: rgba(255,255,255,0.5);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .links-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .ref-link {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .ref-link:hover { text-decoration: underline; color: #1a5276; }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
+
+        @media (max-width: 1000px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; }
+            .left-col, .right-col { flex: none; width: 100%; }
+            .controls-tile { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="left-col">
+        <div class="glass-tile menu-tile">
+            <button class="menu-btn active" onclick="setDesign('dimensions')">Dimensions</button>
+            <button class="menu-btn" onclick="setDesign('infinity')">Infinity</button>
+            <button class="menu-btn" onclick="setDesign('labyrinth')">Labyrinth</button>
+            <button class="menu-btn" onclick="setDesign('starburst')">Starburst</button>
+            <button class="menu-btn" onclick="setDesign('monarch')">Monarch</button>
+        </div>
+
+        <div class="glass-tile sim-tile">
+            <canvas id="simCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <div class="glass-tile controls-tile">
+            <div class="control-group">
+                <h4>Front Wheel \(\omega_1\)</h4>
+                <div class="slider-container">
+                    <div class="slider-label"><span>Angular Velocity</span><span id="v1-val">1.00</span></div>
+                    <input type="range" id="v1" min="-3" max="3" step="0.01" value="1.00">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label"><span>Damping \(\gamma\)</span><span id="d1-val">0.000</span></div>
+                    <input type="range" id="d1" min="0" max="0.1" step="0.001" value="0.00">
+                </div>
+            </div>
+            <div class="control-group">
+                <h4>Back Wheel \(\omega_2\)</h4>
+                <div class="slider-container">
+                    <div class="slider-label"><span>Angular Velocity</span><span id="v2-val">-1.00</span></div>
+                    <input type="range" id="v2" min="-3" max="3" step="0.01" value="-1.00">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label"><span>Damping \(\gamma\)</span><span id="d2-val">0.000</span></div>
+                    <input type="range" id="d2" min="0" max="0.1" step="0.001" value="0.00">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-tile right-col">
+        <div class="theory-content">
+            <h2 class="theory-title">Physics of Kinetic Interference</h2>
+            
+            <p>This simulation visualizes the interference patterns (Moiré effects) generated by two coaxial, counter-rotating radial gratings. The beauty lies not just in the art, but in the rigid mathematical laws governing motion perception.</p>
+
+            <h3 class="section-head">1. The Exact Speed Ratio \(\omega_1 = -\omega_2\)</h3>
+            <p>The most stable and hypnotic patterns occur when the two wheels rotate at exactly equal but opposite speeds (a 1:-1 ratio). Why does this create the "breathing" effect?</p>
+            <p>Consider the intersection point \(P\) of two curves. As the wheels rotate with angular velocities \(\omega_1\) and \(\omega_2\), the phase angle of the intersection \(\Phi\) evolves as:</p>
+            
+            <div class="math-block">
+                \[\Phi(t) = (\omega_1 + \omega_2) \cdot t\]
+            </div>
+
+            <p><strong>Case A: Perfect Symmetry (\(\omega_1 = -\omega_2\))</strong><br>
+            The sum is zero. The "net" rotation of the pattern is zero. This creates a <strong>Standing Wave</strong>. The intersection points move radially (in and out) but do not rotate around the center. The sculpture appears to "breathe" in place.</p>
+
+            <p><strong>Case B: The Drift (\(\omega_1 \neq -\omega_2\))</strong><br>
+            If one wheel is slightly faster (e.g., 1.0 vs -0.9), the sum is non-zero. The entire interference pattern begins to rotate slowly in the direction of the faster wheel. This breaks the illusion of a stationary, living object.</p>
+
+            <h3 class="section-head">2. Spatiotemporal Frequency</h3>
+            <p>The "shimmer" you see is defined by the beat frequency of the optical overlap. The visual frequency \(f_{vis}\) perceived by the eye is the absolute difference of the spatial frequencies:</p>
+
+            <div class="math-block">
+                \[f_{vis} = | f_{wheel1}(\theta) - f_{wheel2}(\theta) |\]
+            </div>
+
+            <p>In the "Dimensions" model (Logarithmic Spirals), the angle \(\alpha\) of the spoke is a function of the radius \(r\). The intersection of two such spirals creates a locus of points that forms a Torus. The <strong>Glass Pattern</strong> effect allows the brain to integrate these moving points into a solid 3D form.</p>
+
+            <h3 class="section-head">3. Dynamics & Damping</h3>
+            <p>Real kinetic sculptures are not perpetual motion machines. They are driven by constant-force springs and resisted by air drag and bearing friction. We simulate this using a velocity decay model:</p>
+            
+            <div class="math-block">
+                \[v_{t+1} = v_t + \frac{F_{spring}}{m} - (v_t \cdot \gamma_{drag})\]
+            </div>
+
+            <ul>
+                <li><strong>\(\gamma\) (Gamma):</strong> The damping coefficient. High \(\gamma\) simulates running in water (high viscosity).</li>
+                <li><strong>\(v\):</strong> Angular velocity.</li>
+            </ul>
+             
+            <h3 class="section-head">4. Simulating Natural Forms</h3>
+            <p>By carefully designing the spoke geometry, we can mimic the behavior of specific biological or physical objects that naturally move in a radial rhythm:</p>
+            <ul>
+                <li><strong>Jellyfish / Squid:</strong> Using the "Infinity" (wave) spoke design but limiting the curve, you can create a bell shape that pulses open and closed, mimicking a swimming jellyfish.</li>
+                <li><strong>Blossoming Flowers:</strong> By using a logarithmic curve similar to "Dimensions" but wider, the interference pattern looks like petals constantly opening from the center.</li>
+                <li><strong>A Beating Heart:</strong> If the spokes are designed with a specific variance in thickness, the resulting Moiré pattern can look like a pulsing muscle or heart.</li>
+                <li><strong>3D Spheres & Donuts:</strong> As noted, the "Dimensions" model specifically creates the illusion of a "3d torus or a ball". This proves the system can render 3D geometric volumes, not just flat lines.</li>
+                <li><strong>Eyes/Pupils:</strong> A tight radial pattern can look like an iris dilating and contracting.</li>
+            </ul>
+
+            <h3 class="section-head">5. Object Motion (The Barrier Grid Alternative)</h3>
+            <p>Another technique for creating animated illusions is "barrier-grid animation." Instead of two moving wheels, a static image with interlaced frames of an animation is viewed through a moving screen with vertical slits (the barrier grid). As the grid moves, it reveals one frame at a time, creating the illusion of smooth motion from a single static picture. This is often used in "kinegrams" or "scanimation."</p>
+
+            <h3 class="section-head">6. Design Mimicry</h3>
+            <p>You can design the spoke geometry to mimic the behavior of specific biological or physical objects that naturally move in a radial rhythm:</p>
+            <ul>
+                <li><strong>Jellyfish / Squid:</strong> By using the "Infinity" (wave) spoke design but limiting the curve, you can create a bell shape that pulses open and closed, mimicking a swimming jellyfish.</li>
+                <li><strong>Blossoming Flowers:</strong> By using a logarithmic curve similar to "Dimensions" but wider, the interference pattern looks like petals constantly opening from the center.</li>
+                <li><strong>A Beating Heart:</strong> If the spokes are designed with a specific variance in thickness, the resulting Moiré pattern can look like a pulsing muscle or heart.</li>
+                <li><strong>3D Spheres & Donuts:</strong> As noted in the document, the "Dimensions" model specifically creates the illusion of a "3d torus or a ball". This proves the system can render 3D geometric volumes, not just flat lines.</li>
+                <li><strong>Eyes/Pupils:</strong> A tight radial pattern can look like an iris dilating and contracting.</li>
+            </ul>
+
+            <div class="links-section">
+                <h3 class="section-head">References & Research</h3>
+                <a class="ref-link" href="https://woodthatworks.com" target="_blank">David C. Roy Official Site (Primary Artist)</a>
+                <a class="ref-link" href="https://static1.squarespace.com/static/534da071e4b09a268e6bd84a/t/56a3f84fe0327cd3ef5d0077/1453586611759/Dimensions+Directions+pdf.pdf" target="_blank">Dimensions Sculpture Manual (PDF Source)</a>
+                <a class="ref-link" href="https://www.branchingoutwood.com/blog/kinetic-sculpture-gifts-and-inspiration" target="_blank">Kinetic Sculpture Inspiration (Blog)</a>
+                <a class="ref-link" href="https://doi.org/10.1068/p5541" target="_blank">Research: The perception of dynamic Glass patterns</a>
+                <a class="ref-link" href="https://jov.arvojournals.org/article.aspx?articleid=2193976" target="_blank">Paper: Motion integration in Moiré patterns</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // --- STATE MANAGEMENT ---
+        let currentDesign = 'dimensions';
+        const w1 = { angle: 0, vel: 1.0, color: 'rgba(139, 90, 43, 0.9)' }; // Front
+        const w2 = { angle: 0, vel: -1.0, color: 'rgba(78, 52, 46, 0.8)' }; // Back
+
+        // UI References
+        const ui = {
+            v1: document.getElementById('v1'), d1: document.getElementById('d1'),
+            v2: document.getElementById('v2'), d2: document.getElementById('d2'),
+            l_v1: document.getElementById('v1-val'), l_d1: document.getElementById('d1-val'),
+            l_v2: document.getElementById('v2-val'), l_d2: document.getElementById('d2-val'),
+            btns: document.querySelectorAll('.menu-btn')
+        };
+
+        // --- DRAWING ALGORITHMS ---
+        
+        // 1. DIMENSIONS (Torus) - The signature hook shape
+        function drawDimensions(ctx) {
+            ctx.beginPath();
+            ctx.moveTo(35, -5); 
+            ctx.lineTo(35, 5);
+            ctx.bezierCurveTo(60, 20, 80, 50, 90, 80);
+            ctx.bezierCurveTo(120, 110, 240, 60, 260, 10);
+            ctx.bezierCurveTo(200, 50, 130, 70, 100, 60);
+            ctx.bezierCurveTo(80, 40, 60, 0, 35, -5);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // 2. INFINITY (Wave) - Sinusoidal flow
+        function drawInfinity(ctx) {
+            ctx.beginPath();
+            ctx.moveTo(30, 0);
+            ctx.bezierCurveTo(60, 40, 90, -40, 120, 0);
+            ctx.bezierCurveTo(150, 40, 180, -40, 210, 0);
+            ctx.bezierCurveTo(240, 40, 270, -20, 280, 0);
+            // Return path
+            ctx.bezierCurveTo(270, 10, 240, 60, 210, 20);
+            ctx.bezierCurveTo(180, -20, 150, 60, 120, 20);
+            ctx.bezierCurveTo(90, -20, 60, 60, 30, 20);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // 3. LABYRINTH (Lattice) - Parallel arcs
+        function drawLabyrinth(ctx) {
+            ctx.save();
+            ctx.lineWidth = 2;
+            for(let offset = 0; offset < 30; offset+=10) {
+                ctx.beginPath();
+                ctx.moveTo(40, offset);
+                ctx.bezierCurveTo(100, 100+offset, 200, -50+offset, 280, 50+offset);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 4. STARBURST (Radial) - Straight geometric lines
+        function drawStarburst(ctx) {
+            ctx.beginPath();
+            ctx.moveTo(20, 0);
+            ctx.lineTo(280, 20); 
+            ctx.lineTo(280, -20);
+            ctx.lineTo(20, 0);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // 5. MONARCH (Organic) - Butterfly vein structure
+        function drawMonarch(ctx) {
+            ctx.beginPath();
+            ctx.moveTo(30, 0);
+            ctx.bezierCurveTo(50, 80, 150, 10, 180, 60);
+            ctx.bezierCurveTo(220, 120, 260, 40, 280, 80);
+            ctx.lineTo(270, 90);
+            ctx.bezierCurveTo(250, 50, 210, 130, 170, 70);
+            ctx.bezierCurveTo(140, 20, 40, 100, 30, 10);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // --- CORE ENGINE ---
+
+        function setDesign(name) {
+            currentDesign = name;
+            ui.btns.forEach(b => b.classList.remove('active'));
+            const buttonToActivate = Array.from(ui.btns).find(b => b.textContent.toLowerCase() === name.toLowerCase());
+            if (buttonToActivate) {
+                buttonToActivate.classList.add('active');
+            }
+        }
+
+        function updatePhysics() {
+            const process = (w, vInput, dInput) => {
+                let target = parseFloat(vInput.value);
+                let damp = parseFloat(dInput.value);
+                
+                if (damp === 0) {
+                    w.vel = target;
+                } else {
+                    let force = (target - w.vel) * 0.05; 
+                    let drag = w.vel * damp;
+                    w.vel += force - drag;
+                }
+                w.angle += w.vel * 0.05;
+            };
+
+            process(w1, ui.v1, ui.d1);
+            process(w2, ui.v2, ui.d2);
+        }
+
+        function drawWheel(wObj, isReflected) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(wObj.angle);
+            if(isReflected) ctx.scale(-1, 1);
+
+            ctx.fillStyle = wObj.color;
+            ctx.strokeStyle = "#3e2723";
+            ctx.lineWidth = 1.5;
+
+            let count = 12;
+            if(currentDesign === 'starburst') count = 24;
+            if(currentDesign === 'labyrinth') count = 8;
+
+            for(let i=0; i<count; i++) {
+                if(currentDesign === 'dimensions') drawDimensions(ctx);
+                else if(currentDesign === 'infinity') drawInfinity(ctx);
+                else if(currentDesign === 'labyrinth') drawLabyrinth(ctx);
+                else if(currentDesign === 'starburst') drawStarburst(ctx);
+                else if(currentDesign === 'monarch') drawMonarch(ctx);
+                
+                ctx.rotate((Math.PI * 2) / count);
+            }
+
+            // Center Hub
+            ctx.beginPath();
+            ctx.arc(0, 0, 35, 0, Math.PI*2);
+            ctx.fillStyle = "#E8DED7";
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        // --- EVENT LISTENERS & INITIALIZATION ---
+        ui.v1.addEventListener('input', () => ui.l_v1.textContent = parseFloat(ui.v1.value).toFixed(2));
+        ui.d1.addEventListener('input', () => ui.l_d1.textContent = parseFloat(ui.d1.value).toFixed(3));
+        ui.v2.addEventListener('input', () => ui.l_v2.textContent = parseFloat(ui.v2.value).toFixed(2));
+        ui.d2.addEventListener('input', () => ui.l_d2.textContent = parseFloat(ui.d2.value).toFixed(3));
+
+        function animate() {
+            updatePhysics();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawWheel(w2, true);
+            drawWheel(w1, false);
+            requestAnimationFrame(animate);
+        }
+        
+        animate(); // Start the animation
+
+        document.addEventListener('DOMContentLoaded', function() {
+            renderMathInElement(document.body, {
+              delimiters: [
+                  {left: '\\[', right: '\\]', display: true},
+                  {left: '\\(', right: '\\)', display: false}
+              ]
+            });
+        });
+    </script>
+</body>
+</html>
